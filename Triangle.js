@@ -82,6 +82,7 @@ function drawTriangle(vertices) {
 
 var g_vertexBuffer =null;
 var g_uvBuffer = null;
+var g_normalBuffer = null;
 
 function initTriangle3D(){
   // Create a buffer object
@@ -113,6 +114,19 @@ function initUVBuffer(){
   // Enable the assignment to a_Position variable
   gl.enableVertexAttribArray(a_UV);
 
+}
+
+function initNormalBuffer(){
+  g_normalBuffer = gl.createBuffer();
+  if(!g_normalBuffer){
+    console.log('Failed to create the normal buffer object');
+    return -1;
+  }
+  // Bind the buffer object to target
+  gl.bindBuffer(gl.ARRAY_BUFFER, g_normalBuffer);
+  gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
+  // Enable the assignment to a_Normal variable
+  gl.enableVertexAttribArray(a_Normal);
 }
 
 
