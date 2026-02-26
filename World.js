@@ -1,4 +1,3 @@
-// ColoredPoint.js (c) 2012 matsuda
 // Vertex shader program
 var VSHADER_SOURCE = `
   precision mediump float;
@@ -442,7 +441,7 @@ function renderAllShapes(){
 
   var whiteSphere = new Sphere();
   whiteSphere.color = [1.0, 1.0, 1.0, 1.0];
-  whiteSphere.textureNum = -2;
+  whiteSphere.textureNum = 1;
   if(g_normalOn) whiteSphere.textureNum = -3;
   whiteSphere.matrix.translate(0.75, .2, 0.0);
   whiteSphere.matrix.scale(0.3, 0.3, 0.3);

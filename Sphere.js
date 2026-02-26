@@ -26,21 +26,26 @@ render(){
             var p2 = [sin(t+dd)*cos(r), sin(t+dd)*sin(r), cos(t+dd)];
             var p3 = [sin(t)*cos(r+dd), sin(t)*sin(r+dd), cos(t)];
             var p4 = [sin(t+dd)*cos(r+dd),sin(t+dd)*sin(r+dd),cos(t+dd)];
+
+            var uv1 = [t/Math.PI, r/(2*Math.PI)];
+            var uv2 = [(t+dd)/Math.PI, r/(2*Math.PI)];
+            var uv3 = [t/Math.PI, (r+dd)/(2*Math.PI)];
+            var uv4 = [(t+dd)/Math.PI, (r+dd)/(2*Math.PI)];
         
             verts32 = verts32.concat(p1);
-            uv32 = uv32.concat([0,0]);
+            uv32 = uv32.concat(uv1);
             verts32 = verts32.concat(p2);
-            uv32 = uv32.concat([0,0]);
+            uv32 = uv32.concat(uv2);
             verts32 = verts32.concat(p4);
-            uv32 = uv32.concat([0,0]);
+            uv32 = uv32.concat(uv4);
 
 
             verts32 = verts32.concat(p1);
-            uv32 = uv32.concat([0,0]);
+            uv32 = uv32.concat(uv1);
             verts32 = verts32.concat(p4);
-            uv32 = uv32.concat([0,0]);
+            uv32 = uv32.concat(uv4);
             verts32 = verts32.concat(p3);
-            uv32 = uv32.concat([0,0]);
+            uv32 = uv32.concat(uv3);
 
     } 
 
