@@ -28,6 +28,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler0;
   uniform sampler2D u_Sampler1;
   uniform int u_whichTexture;
+  uniform int u_useSpecular; //1 for specular, 0 for no specular
   uniform vec3 u_lightPos;
   uniform vec3 u_cameraPos;
   varying vec4 v_VertPos;
@@ -78,8 +79,12 @@ var FSHADER_SOURCE = `
 
   vec3 diffuse = vec3(gl_FragColor) * nDotL;
   vec3 ambient = vec3(gl_FragColor) * 0.1; // Ambient light contribution
+  
+  if(u_useSpecular == 0){
+    gl_FragColor = vec4(diffuse + ambient, 1.0);
+  } else {
   gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
-
+  }
 
   }
 `;
@@ -93,6 +98,7 @@ let a_UV;
 let a_Normal;
 let u_whichTexture;
 let u_Size;
+let u_useSpecular;
 let u_ModelMatrix;
 let u_ProjectionMatrix;
 let u_ViewMatrix;
@@ -158,6 +164,12 @@ function connectVariablesToGLSL() {
   if (!u_ModelMatrix) {
    console.log('Failed to get the storage location of u_ModelMatrix');
    return;
+  }
+
+  u_useSpecular = gl.getUniformLocation(gl.program, 'u_useSpecular');
+  if (!u_useSpecular) {
+    console.log('Failed to get the storage location of u_useSpecular');
+    return;
   }
 
   u_CameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
@@ -499,6 +511,7 @@ function renderAllShapes(){
   light.renderfast();
 
   var sky = new Cube();
+  sky.useSpecular = 0;
   sky.color = [1.0, 0.5, 0.5, 1.0];
   sky.textureNum = -2;
   if(g_normalOn) sky.textureNum = -3;

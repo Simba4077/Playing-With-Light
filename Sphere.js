@@ -4,6 +4,7 @@ function sin(angle) {return Math.sin(angle); }
 class Sphere{
   constructor(){
     this.type='sphere';
+    this.useSpecular = 1; //1 for ambient, 0 for no ambient
     this.color=[1.0,1.0,1.0,1.0];
     this.matrix = new Matrix4(); //uncomment when using 
     this.textureNum = -2; //use UV color as default
@@ -14,6 +15,7 @@ render(){
     var uv32 = [];
     var rgba = this.color;
     gl.uniform1i(u_whichTexture, this.textureNum);
+    gl.uniform1i(u_useSpecular, this.useSpecular);
     gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
     gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
 
