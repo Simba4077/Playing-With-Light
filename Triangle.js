@@ -78,8 +78,6 @@ function drawTriangle(vertices) {
   return n;
 }
 
-
-
 var g_vertexBuffer =null;
 var g_uvBuffer = null;
 var g_normalBuffer = null;
@@ -128,47 +126,4 @@ function initNormalBuffer(){
   gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
   // Enable the assignment to a_Normal variable
   gl.enableVertexAttribArray(a_Normal);
-}
-
-
-//not using this function anymore
-function drawTriangle3D(vertices) {
-  // var vertices = new Float32Array([
-  //   0, 0.5,   -0.5, -0.5,   0.5, -0.5
-  // ]);
-  var n = vertices.length/3; // The number of vertices
-
-  if(g_vertexBuffer == null){
-    initTriangle3D();
-  }
-
-  // Write date into the buffer object
-  // gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-  gl.drawArrays(gl.TRIANGLES,0,n);
-}
-
-
-
-//not using this function anymore
-function drawTriangle3DUV(vertices, uv) {
-  var n = vertices.length / 3; // The number of vertices
-
-  if(g_vertexBuffer == null){
-    initTriangle3D();
-  }
-    // Write data into the buffer object
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-
-  if(g_uvBuffer == null){
-    initUVBuffer();
-  }
-
-  // Write data into the buffer object
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uv), gl.DYNAMIC_DRAW);
-  //draw the triangle
-  gl.drawArrays(gl.TRIANGLES,0,n);
-
-  g_vertexBuffer = null;
-  g_uvBuffer = null;
 }

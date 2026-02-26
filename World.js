@@ -8,13 +8,14 @@ var VSHADER_SOURCE = `
   varying vec3 v_Normal;
   varying vec4 v_VertPos;
   uniform mat4 u_ModelMatrix;
+  uniform mat4 u_NormalMatrix;
   uniform mat4 u_GlobalRotateMatrix;
   uniform mat4 u_ViewMatrix;
   uniform mat4 u_ProjectionMatrix;
   void main() {
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV;
-    v_Normal = a_Normal;
+    v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 1.0)));
     v_VertPos = u_ModelMatrix * a_Position;
   }
 `;
@@ -103,6 +104,7 @@ let u_whichTexture;
 let u_Size;
 let u_useSpecular;
 let u_ModelMatrix;
+let u_NormalMatrix;
 let u_ProjectionMatrix;
 let u_ViewMatrix;
 let u_CameraPos;
@@ -154,6 +156,12 @@ function connectVariablesToGLSL() {
   a_Normal = gl.getAttribLocation(gl.program, 'a_Normal');
   if (a_Normal < 0){
     console.log('Failed to get the storage location of a_Normal');
+    return;
+  }
+
+  u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
+  if (!u_NormalMatrix) {
+    console.log('Failed to get the storage location of u_NormalMatrix');
     return;
   }
 
@@ -239,8 +247,8 @@ let g_selectedSize = 5;
 let g_selectedType = POINT;
 let g_globalAngle = 0;
 let g_camera;
-let g_yellowAngle = 0;
-let g_magentaAngle = 0;
+let g_headAngle = 0;
+let g_middleBodyAngle = 0;
 let g_isDragging = false;
 let g_lastMouseX = 0;
 let g_lastMouseY = 0;
@@ -281,6 +289,9 @@ function updateAnimationAngles() {
   if(g_animationOn){
     g_lightPos[0] = 4* Math.cos(g_seconds);
   }
+
+  g_headAngle = 90*Math.sin(g_seconds);
+  g_middleBodyAngle = 60*Math.sin(g_seconds);
 }
 
 
@@ -506,6 +517,11 @@ function renderAllShapes(){
   var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
   gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
 
+  var normalMatrix = new Matrix4();
+  normalMatrix.setInverseOf(globalRotMat);
+  normalMatrix.transpose();
+  gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+
 
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -548,40 +564,44 @@ function renderAllShapes(){
   whiteSphere.matrix.scale(0.3, 0.3, 0.3);
   whiteSphere.render();
 
-  var body = new Cube();
-  body.color = [1.0, 0.0, 0.0, 1.0];
-  body.textureNum = -2;
-  if(g_normalOn) body.textureNum = -3;
-  body.matrix.translate(-0.25, -0.75, 0.0);
-  body.matrix.rotate(-5, 1, 0, 0); 
-  body.matrix.scale(0.5, 0.3, 0.5); 
-  body.renderfast();
 
-  //draw a left arm
-  var leftArm = new Cube();
-  leftArm.color = [1.0, 1.0, 0.0, 1.0];
-  if(g_normalOn) leftArm.textureNum = -3;
-  leftArm.matrix.setTranslate(0, -0.5, 0.0);
-  leftArm.matrix.rotate(-5, 1, 0, 1);
-  leftArm.matrix.rotate(-g_yellowAngle, 0, 0, 1);
-  var yellowCoordinatesMat = new Matrix4(leftArm.matrix);
-  leftArm.matrix.scale(0.25, 0.7, 0.5);
-  leftArm.matrix.translate(-0.5, 0.0, 0.0);
-  leftArm.renderfast();
+  //---------------------------------------- rotating cubes
+  var base = new Cube();
+  base.color = [1.0, 0.0, 0.0, 1.0];
+  base.textureNum = -2;
+  if(g_normalOn) base.textureNum = -3;
+  base.matrix.translate(-0.25, -0.75, 0.0);
+  base.matrix.rotate(-5, 1, 0, 0); 
+  base.matrix.scale(0.5, 0.3, 0.5); 
+  base.renderfast();
 
-  //test box
-  var box = new Cube();
-  box.color = [1.0, 0.0, 1.0, 1.0];
-  if(g_normalOn) box.textureNum = -3;
-  box.matrix = yellowCoordinatesMat;
-  box.matrix.translate(0.0, 0.90, 0.0);
-  box.matrix.rotate(45,0,0,1);
-  box.matrix.rotate(g_magentaAngle, 0, 0, 1);
-  box.matrix.scale(0.3, 0.3, 0.3);
-  box.matrix.translate(-0.5, 0.0, -0.001);
-  // box.matrix.rotate(-30, 1, 0, 0);
-  // box.matrix.scale(0.2, 0.4, 0.2);
-  box.renderfast();
+  //draw middle body
+  var middleBody = new Cube();
+  middleBody.color = [1.0, 1.0, 0.0, 1.0];
+  if(g_normalOn) middleBody.textureNum = -3;
+  middleBody.matrix.setTranslate(0, -0.5, 0.0);
+  middleBody.matrix.rotate(-5, 1, 0, 1);
+  middleBody.matrix.rotate(-g_middleBodyAngle, 0, 0, 1);
+  var middleCoordinatesMat = new Matrix4(middleBody.matrix);
+  middleBody.matrix.scale(0.3, 0.7, 0.5);
+  middleBody.matrix.translate(-0.5, 0.0, 0.0);
+  middleBody.normalMatrix.setInverseOf(middleBody.matrix).transpose();
+  middleBody.renderfast();
+
+  //head 
+  var head = new Cube();
+  head.color = [1.0, 0.0, 1.0, 1.0];
+  if(g_normalOn) head.textureNum = -3;
+  head.matrix = middleCoordinatesMat;
+  head.matrix.translate(0.0, 0.90, 0.0);
+  head.matrix.rotate(45,0,0,1);
+  head.matrix.rotate(g_headAngle, 0, 0, 1);
+  head.matrix.scale(0.3, 0.3, 0.3);
+  head.matrix.translate(-0.5, 0.0, -0.001);
+  head.normalMatrix.setInverseOf(head.matrix).transpose();
+  head.renderfast();
+
+  //----------------------------------------
 
 
   var duration = performance.now() - startTime;
