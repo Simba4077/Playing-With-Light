@@ -29,6 +29,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler1;
   uniform int u_whichTexture;
   uniform vec3 u_lightPos;
+  uniform vec3 u_cameraPos;
   varying vec4 v_VertPos;
   void main() {
 
@@ -66,9 +67,18 @@ var FSHADER_SOURCE = `
   vec3 N = normalize(v_Normal);
   float nDotL = max(dot(N, L), 0.0);
 
+  //reflection
+  vec3 R = reflect(-L, N);
+  
+  //eye 
+  vec3 E = normalize(u_cameraPos-vec3(v_VertPos));
+
+  //Specular
+  float specular = 0.8 *pow(max(dot(E,R),0.0),30.0);
+
   vec3 diffuse = vec3(gl_FragColor) * nDotL;
-  vec3 ambient = vec3(gl_FragColor) * 0.3; // Ambient light contribution
-  gl_FragColor = vec4(diffuse + ambient, 1.0);
+  vec3 ambient = vec3(gl_FragColor) * 0.1; // Ambient light contribution
+  gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
 
 
   }
@@ -86,6 +96,7 @@ let u_Size;
 let u_ModelMatrix;
 let u_ProjectionMatrix;
 let u_ViewMatrix;
+let u_CameraPos;
 let u_GlobalRotateMatrix;
 let u_Sampler0;
 let u_Sampler1;
@@ -149,6 +160,13 @@ function connectVariablesToGLSL() {
    return;
   }
 
+  u_CameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
+  if (!u_CameraPos) {
+    console.log('Failed to get the storage location of u_cameraPos');
+    return;
+  }
+
+
   u_GlobalRotateMatrix = gl.getUniformLocation(gl.program, 'u_GlobalRotateMatrix');
   if(!u_GlobalRotateMatrix) {
     console.log('Failed to get the storage location of u_GlobalRotateMatrix');
@@ -207,6 +225,7 @@ let g_lastMouseY = 0;
 let g_flyMode = false;
 let g_normalOn = false;
 let g_lightPos =[0,1,-2];
+let g_animationOn = false;
 
 
 
@@ -219,6 +238,8 @@ function addActionsForHtmlUI(){
 
   document.getElementById('normalOn').onclick = function(){g_normalOn = true; renderAllShapes();};
   document.getElementById('normalOff').onclick = function(){g_normalOn = false; renderAllShapes();};
+  document.getElementById('animationOn').onclick = function(){g_animationOn = true; renderAllShapes();};
+  document.getElementById('animationOff').onclick = function(){g_animationOn = false; renderAllShapes();};
 }
 
 var g_startTime = performance.now()/1000;
@@ -232,7 +253,9 @@ function tick() {
 }
 
 function updateAnimationAngles() {
-  g_lightPos[0] = Math.cos(g_seconds);
+  if(g_animationOn){
+    g_lightPos[0] = 4* Math.cos(g_seconds);
+  }
 }
 
 
@@ -463,7 +486,7 @@ function renderAllShapes(){
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
-
+  gl.uniform3f(u_CameraPos, g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2]);
 
   drawMap();
 
@@ -471,7 +494,7 @@ function renderAllShapes(){
   light.color = [2,2,0,1];
   light.textureNum = -2;
   light.matrix.translate(g_lightPos[0], g_lightPos[1], g_lightPos[2]);
-  light.matrix.scale(0.1, 0.1, 0.1);
+  light.matrix.scale(-0.1, -0.1, -0.1);
   light.matrix.translate(-0.5, -0.5, -0.5);
   light.renderfast();
 
@@ -495,7 +518,7 @@ function renderAllShapes(){
   whiteSphere.color = [1.0, 1.0, 1.0, 1.0];
   whiteSphere.textureNum = 1;
   if(g_normalOn) whiteSphere.textureNum = -3;
-  whiteSphere.matrix.translate(0.75, .2, 0.0);
+  whiteSphere.matrix.translate(-0.75, -.2, -0.0);
   whiteSphere.matrix.scale(0.3, 0.3, 0.3);
   whiteSphere.render();
 
