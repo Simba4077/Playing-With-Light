@@ -247,8 +247,8 @@ let g_selectedSize = 5;
 let g_selectedType = POINT;
 let g_globalAngle = 0;
 let g_camera;
-let g_headAngle = 0;
-let g_middleBodyAngle = 0;
+let g_topAngle = 0;
+let g_middleAngle = 0;
 let g_isDragging = false;
 let g_lastMouseX = 0;
 let g_lastMouseY = 0;
@@ -273,6 +273,9 @@ function addActionsForHtmlUI(){
   document.getElementById('animationOff').onclick = function(){g_animationOn = false; renderAllShapes();};
   document.getElementById('lightOn').onclick = function(){g_lightOn = true; renderAllShapes();};
   document.getElementById('lightOff').onclick = function(){g_lightOn = false; renderAllShapes();};
+
+  document.getElementById('walkOn').onclick = function(){ g_walkingAnimation = true; };
+  document.getElementById('walkOff').onclick = function(){ g_walkingAnimation = false; };
 }
 
 var g_startTime = performance.now()/1000;
@@ -290,8 +293,9 @@ function updateAnimationAngles() {
     g_lightPos[0] = 4* Math.cos(g_seconds);
   }
 
-  g_headAngle = 90*Math.sin(g_seconds);
-  g_middleBodyAngle = 60*Math.sin(g_seconds);
+  g_topAngle = 90*Math.sin(g_seconds);
+  g_middleAngle = 60*Math.sin(g_seconds);
+  updateChihuahuaAnimation();
 }
 
 
@@ -299,6 +303,7 @@ function handleMouseDown(ev) {
   g_isDragging = true;
   g_lastMouseX = ev.clientX;
   g_lastMouseY = ev.clientY;
+
 }
 
 function handleMouseMove(ev) {
@@ -365,6 +370,7 @@ function main() {
   canvas.onmousedown = handleMouseDown;
   canvas.onmousemove = handleMouseMove;
   canvas.onmouseup = handleMouseUp;
+
   initTextures();
  
   // Specify the color for clearing <canvas>
@@ -530,6 +536,7 @@ function renderAllShapes(){
   gl.uniform3f(u_CameraPos, g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2]);
   gl.uniform1i(u_lightOn, g_lightOn);
   drawMap();
+  drawChihuahua();
 
   var light = new Cube();
   light.color = [2,2,0,1];
@@ -569,7 +576,6 @@ function renderAllShapes(){
   var base = new Cube();
   base.color = [1.0, 0.0, 0.0, 1.0];
   base.textureNum = -2;
-  if(g_normalOn) base.textureNum = -3;
   base.matrix.translate(-0.25, -0.75, 0.0);
   base.matrix.rotate(-5, 1, 0, 0); 
   base.matrix.scale(0.5, 0.3, 0.5); 
@@ -578,10 +584,9 @@ function renderAllShapes(){
   //draw middle body
   var middleBody = new Cube();
   middleBody.color = [1.0, 1.0, 0.0, 1.0];
-  if(g_normalOn) middleBody.textureNum = -3;
   middleBody.matrix.setTranslate(0, -0.5, 0.0);
   middleBody.matrix.rotate(-5, 1, 0, 1);
-  middleBody.matrix.rotate(-g_middleBodyAngle, 0, 0, 1);
+  middleBody.matrix.rotate(-g_middleAngle, 0, 0, 1);
   var middleCoordinatesMat = new Matrix4(middleBody.matrix);
   middleBody.matrix.scale(0.3, 0.7, 0.5);
   middleBody.matrix.translate(-0.5, 0.0, 0.0);
@@ -591,11 +596,10 @@ function renderAllShapes(){
   //head 
   var head = new Cube();
   head.color = [1.0, 0.0, 1.0, 1.0];
-  if(g_normalOn) head.textureNum = -3;
   head.matrix = middleCoordinatesMat;
   head.matrix.translate(0.0, 0.90, 0.0);
   head.matrix.rotate(45,0,0,1);
-  head.matrix.rotate(g_headAngle, 0, 0, 1);
+  head.matrix.rotate(g_topAngle, 0, 0, 1);
   head.matrix.scale(0.3, 0.3, 0.3);
   head.matrix.translate(-0.5, 0.0, -0.001);
   head.normalMatrix.setInverseOf(head.matrix).transpose();
