@@ -30,6 +30,7 @@ var FSHADER_SOURCE = `
   uniform int u_whichTexture;
   uniform int u_useSpecular; //1 for specular, 0 for no specular
   uniform vec3 u_lightPos;
+  uniform bool u_lightOn; //true for light on, false for light off
   uniform vec3 u_cameraPos;
   varying vec4 v_VertPos;
   void main() {
@@ -53,38 +54,40 @@ var FSHADER_SOURCE = `
     gl_FragColor = vec4(1.0, 0.2, 0.2, 1.0); //Error color
   }
 
-  vec3 lightVector = u_lightPos-vec3(v_VertPos);
-  float r = length(lightVector);
-  // if(r < 1.0){
-  //   gl_FragColor = vec4(1,0,0,1);
-  // } else if (r<2.0) {
-  //   gl_FragColor = vec4(0,1,0,1); 
-  // }
+  if(u_lightOn){
+      vec3 lightVector = u_lightPos-vec3(v_VertPos);
+      float r = length(lightVector);
+      // if(r < 1.0){
+      //   gl_FragColor = vec4(1,0,0,1);
+      // } else if (r<2.0) {
+      //   gl_FragColor = vec4(0,1,0,1); 
+      // }
 
-  // gl_FragColor = vec4(vec3(gl_FragColor) / (r*r), 1.0);
+      // gl_FragColor = vec4(vec3(gl_FragColor) / (r*r), 1.0);
 
-  // N dot L lighting
-  vec3 L = normalize(lightVector);
-  vec3 N = normalize(v_Normal);
-  float nDotL = max(dot(N, L), 0.0);
+      // N dot L lighting
+      vec3 L = normalize(lightVector);
+      vec3 N = normalize(v_Normal);
+      float nDotL = max(dot(N, L), 0.0);
 
-  //reflection
-  vec3 R = reflect(-L, N);
-  
-  //eye 
-  vec3 E = normalize(u_cameraPos-vec3(v_VertPos));
+      //reflection
+      vec3 R = reflect(-L, N);
+      
+      //eye 
+      vec3 E = normalize(u_cameraPos-vec3(v_VertPos));
 
-  //Specular
-  float specular = 0.8 *pow(max(dot(E,R),0.0),30.0);
+      //Specular
+      float specular = 0.8 *pow(max(dot(E,R),0.0),30.0);
 
-  vec3 diffuse = vec3(gl_FragColor) * nDotL;
-  vec3 ambient = vec3(gl_FragColor) * 0.1; // Ambient light contribution
-  
-  if(u_useSpecular == 0){
-    gl_FragColor = vec4(diffuse + ambient, 1.0);
-  } else {
-  gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
-  }
+      vec3 diffuse = vec3(gl_FragColor) * nDotL;
+      vec3 ambient = vec3(gl_FragColor) * 0.1; // Ambient light contribution
+      
+      if(u_useSpecular == 0){
+        gl_FragColor = vec4(diffuse + ambient, 1.0);
+      } else {
+      gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+      }
+    }
 
   }
 `;
@@ -107,6 +110,7 @@ let u_GlobalRotateMatrix;
 let u_Sampler0;
 let u_Sampler1;
 let u_lightPos;
+let u_lightOn;
 
 function setupWebGL() {
   canvas = document.getElementById('webgl'); //do not use var, that makes a new local variable instead of using the current global one 
@@ -138,6 +142,12 @@ function connectVariablesToGLSL() {
   a_UV = gl.getAttribLocation(gl.program, 'a_UV');
   if (a_UV < 0){
     console.log('Failed to get the storage location of a_UV');
+    return;
+  }
+
+  u_lightOn = gl.getUniformLocation(gl.program, 'u_lightOn');
+  if (!u_lightOn) {
+    console.log('Failed to get the storage location of u_lightOn');
     return;
   }
 
@@ -238,6 +248,7 @@ let g_flyMode = false;
 let g_normalOn = false;
 let g_lightPos =[0,1,-2];
 let g_animationOn = false;
+let g_lightOn = true;
 
 
 
@@ -252,6 +263,8 @@ function addActionsForHtmlUI(){
   document.getElementById('normalOff').onclick = function(){g_normalOn = false; renderAllShapes();};
   document.getElementById('animationOn').onclick = function(){g_animationOn = true; renderAllShapes();};
   document.getElementById('animationOff').onclick = function(){g_animationOn = false; renderAllShapes();};
+  document.getElementById('lightOn').onclick = function(){g_lightOn = true; renderAllShapes();};
+  document.getElementById('lightOff').onclick = function(){g_lightOn = false; renderAllShapes();};
 }
 
 var g_startTime = performance.now()/1000;
@@ -499,7 +512,7 @@ function renderAllShapes(){
 
   gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
   gl.uniform3f(u_CameraPos, g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2]);
-
+  gl.uniform1i(u_lightOn, g_lightOn);
   drawMap();
 
   var light = new Cube();
