@@ -6,6 +6,7 @@ var VSHADER_SOURCE = `
   attribute vec3 a_Normal;
   varying vec2 v_UV;
   varying vec3 v_Normal;
+  varying vec4 v_VertPos;
   uniform mat4 u_ModelMatrix;
   uniform mat4 u_GlobalRotateMatrix;
   uniform mat4 u_ViewMatrix;
@@ -14,6 +15,7 @@ var VSHADER_SOURCE = `
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV;
     v_Normal = a_Normal;
+    v_VertPos = u_ModelMatrix * a_Position;
   }
 `;
 
@@ -26,6 +28,8 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler0;
   uniform sampler2D u_Sampler1;
   uniform int u_whichTexture;
+  uniform vec3 u_lightPos;
+  varying vec4 v_VertPos;
   void main() {
 
   if (u_whichTexture == -3) { // Use normal vector as color
@@ -47,6 +51,13 @@ var FSHADER_SOURCE = `
     gl_FragColor = vec4(1.0, 0.2, 0.2, 1.0); //Error color
   }
 
+  vec3 lightVector = vec3(v_VertPos)-u_lightPos;
+  float r = length(lightVector);
+  if(r < 1.0){
+    gl_FragColor = vec4(1,0,0,1);
+  } else if (r<2.0) {
+    gl_FragColor = vec4(0,1,0,1); 
+  }
   }
 `;
 
@@ -65,6 +76,7 @@ let u_ViewMatrix;
 let u_GlobalRotateMatrix;
 let u_Sampler0;
 let u_Sampler1;
+let u_lightPos;
 
 function setupWebGL() {
   canvas = document.getElementById('webgl'); //do not use var, that makes a new local variable instead of using the current global one 
@@ -109,6 +121,12 @@ function connectVariablesToGLSL() {
   u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
   if (!u_FragColor) {
     console.log('Failed to get the storage location of u_FragColor');
+    return;
+  }
+
+  u_lightPos = gl.getUniformLocation(gl.program, 'u_lightPos');
+  if (!u_lightPos) {
+    console.log('Failed to get the storage location of u_lightPos');
     return;
   }
 
@@ -175,22 +193,33 @@ let g_lastMouseX = 0;
 let g_lastMouseY = 0;
 let g_flyMode = false;
 let g_normalOn = false;
+let g_lightPos =[0,1,-2];
 
 
 
 function addActionsForHtmlUI(){
   //angle slider events
   document.getElementById('angleSlide').addEventListener('mousemove', function() {g_globalAngle=this.value; renderAllShapes();});
-  document.getElementById('magentaSlide').addEventListener('mousemove', function() { g_magentaAngle = this.value; renderAllShapes();});
-  document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderAllShapes();});
+  document.getElementById('lightSlideX').addEventListener('mousemove', function() { g_lightPos[0] = this.value/100; renderAllShapes();});
+  document.getElementById('lightSlideY').addEventListener('mousemove', function() { g_lightPos[1] = this.value/100; renderAllShapes();});
+  document.getElementById('lightSlideZ').addEventListener('mousemove', function() { g_lightPos[2] = this.value/100; renderAllShapes();});
 
   document.getElementById('normalOn').onclick = function(){g_normalOn = true; renderAllShapes();};
   document.getElementById('normalOff').onclick = function(){g_normalOn = false; renderAllShapes();};
 }
 
+var g_startTime = performance.now()/1000;
+var g_seconds = performance.now()/1000-g_startTime;
+
 function tick() {
+  g_seconds = performance.now()/1000-g_startTime;
+  updateAnimationAngles();
   renderAllShapes();
   requestAnimationFrame(tick);
+}
+
+function updateAnimationAngles() {
+  g_lightPos[0] = Math.cos(g_seconds);
 }
 
 
@@ -420,8 +449,18 @@ function renderAllShapes(){
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+
 
   drawMap();
+
+  var light = new Cube();
+  light.color = [2,2,0,1];
+  light.textureNum = -2;
+  light.matrix.translate(g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+  light.matrix.scale(0.1, 0.1, 0.1);
+  light.matrix.translate(-0.5, -0.5, -0.5);
+  light.renderfast();
 
   var sky = new Cube();
   sky.color = [1.0, 0.5, 0.5, 1.0];
