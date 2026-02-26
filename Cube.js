@@ -74,6 +74,7 @@ class Cube{
       1,0, 0,1, 1,1,
       1,0, 0,0, 0,1,
     ]);
+
     this.cubeNormals = new Float32Array([
       // Front face
       0,0,-1, 0,0,-1, 0,0,-1,

@@ -428,7 +428,7 @@ function renderAllShapes(){
   sky.color = [1.0, 0.5, 0.5, 1.0];
   sky.textureNum = -2;
   if(g_normalOn) sky.textureNum = -3;
-  sky.matrix.scale(32,32,32);
+  sky.matrix.scale(-32,-32,-32);
   sky.matrix.translate(-0.5, -0.5, -0.5);
   sky.renderfast();
 
@@ -440,9 +440,18 @@ function renderAllShapes(){
   floor.matrix.translate(-.5, 1, -.5);
   floor.renderfast();
 
+  var whiteSphere = new Sphere();
+  whiteSphere.color = [1.0, 1.0, 1.0, 1.0];
+  whiteSphere.textureNum = -2;
+  if(g_normalOn) whiteSphere.textureNum = -3;
+  whiteSphere.matrix.translate(0.75, .2, 0.0);
+  whiteSphere.matrix.scale(0.3, 0.3, 0.3);
+  whiteSphere.render();
+
   var body = new Cube();
   body.color = [1.0, 0.0, 0.0, 1.0];
   body.textureNum = -2;
+  if(g_normalOn) body.textureNum = -3;
   body.matrix.translate(-0.25, -0.75, 0.0);
   body.matrix.rotate(-5, 1, 0, 0); 
   body.matrix.scale(0.5, 0.3, 0.5); 
@@ -451,6 +460,7 @@ function renderAllShapes(){
   //draw a left arm
   var leftArm = new Cube();
   leftArm.color = [1.0, 1.0, 0.0, 1.0];
+  if(g_normalOn) leftArm.textureNum = -3;
   leftArm.matrix.setTranslate(0, -0.5, 0.0);
   leftArm.matrix.rotate(-5, 1, 0, 1);
   leftArm.matrix.rotate(-g_yellowAngle, 0, 0, 1);
@@ -462,6 +472,7 @@ function renderAllShapes(){
   //test box
   var box = new Cube();
   box.color = [1.0, 0.0, 1.0, 1.0];
+  if(g_normalOn) box.textureNum = -3;
   box.matrix = yellowCoordinatesMat;
   box.matrix.translate(0.0, 0.90, 0.0);
   box.matrix.rotate(45,0,0,1);

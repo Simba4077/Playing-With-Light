@@ -84,6 +84,7 @@ var g_vertexBuffer =null;
 var g_uvBuffer = null;
 var g_normalBuffer = null;
 
+
 function initTriangle3D(){
   // Create a buffer object
   g_vertexBuffer = gl.createBuffer();
