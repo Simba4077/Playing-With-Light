@@ -25,6 +25,11 @@ var FSHADER_SOURCE = `
   precision mediump float;
   varying vec2 v_UV;
   varying vec3 v_Normal;
+  uniform vec3 u_spotPos;
+  uniform vec3 u_spotDir;
+  uniform float u_spotCosineCutoff;
+  uniform float u_spotExponent;
+  uniform bool u_spotOn;
   uniform vec4 u_FragColor;
   uniform sampler2D u_Sampler0;
   uniform sampler2D u_Sampler1;
@@ -56,38 +61,40 @@ var FSHADER_SOURCE = `
   }
 
   if(u_lightOn){
-      vec3 lightVector = u_lightPos-vec3(v_VertPos);
-      float r = length(lightVector);
-      // if(r < 1.0){
-      //   gl_FragColor = vec4(1,0,0,1);
-      // } else if (r<2.0) {
-      //   gl_FragColor = vec4(0,1,0,1); 
-      // }
-
-      // gl_FragColor = vec4(vec3(gl_FragColor) / (r*r), 1.0);
-
-      // N dot L lighting
-      vec3 L = normalize(lightVector);
+      vec3 L = normalize(u_lightPos - vec3(v_VertPos));
       vec3 N = normalize(v_Normal);
       float nDotL = max(dot(N, L), 0.0);
-
-      //reflection
       vec3 R = reflect(-L, N);
-      
-      //eye 
-      vec3 E = normalize(u_cameraPos-vec3(v_VertPos));
-
-      //Specular
-      float specular = 0.8 *pow(max(dot(E,R),0.0),30.0);
+      vec3 E = normalize(u_cameraPos - vec3(v_VertPos));
+      float specular = 0.8 * pow(max(dot(E, R), 0.0), 30.0);
 
       vec3 diffuse = vec3(gl_FragColor) * nDotL;
-      vec3 ambient = vec3(gl_FragColor) * 0.1; // Ambient light contribution
-      
+      vec3 ambient = vec3(gl_FragColor) * 0.1;
+
+      vec3 finalColor;
       if(u_useSpecular == 0){
-        gl_FragColor = vec4(diffuse + ambient, 1.0);
+        finalColor = diffuse + ambient;
       } else {
-      gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+        finalColor = diffuse + ambient + specular;
       }
+
+      if(u_spotOn){
+        vec3 spotL = normalize(u_spotPos - vec3(v_VertPos));
+        float spotFactor = 0.0;
+        vec3 D = normalize(-u_spotDir);
+        float spotCosine = dot(D, spotL);
+        if(spotCosine >= u_spotCosineCutoff){
+          spotFactor = pow(spotCosine, u_spotExponent);
+        }
+        float spotNDotL = max(dot(N, spotL), 0.0);
+        vec3 spotR = reflect(-spotL, N);
+        float spotSpec = 0.8 * pow(max(dot(E, spotR), 0.0), 30.0);
+        vec3 spotDiffuse = vec3(gl_FragColor) * spotNDotL * spotFactor;
+        vec3 spotSpecular = spotSpec * spotFactor * vec3(1.0);
+        finalColor += spotDiffuse + spotSpecular;
+      }
+
+      gl_FragColor = vec4(finalColor, 1.0);
     }
 
   }
@@ -113,6 +120,17 @@ let u_Sampler0;
 let u_Sampler1;
 let u_lightPos;
 let u_lightOn;
+let u_spotPos;
+let u_spotDir;
+let u_spotCosineCutoff;
+let u_spotExponent;
+let u_spotOn;
+
+let g_spotPos = [0, 5, 0];
+let g_spotDir = [0, -1, 0];          // pointing straight down
+let g_spotCosineCutoff = Math.cos(Math.PI / 8);  // 22.5 degree cone
+let g_spotExponent = 20.0;            // higher = sharper falloff at edges
+let g_spotOn = true;
 
 function setupWebGL() {
   canvas = document.getElementById('webgl'); //do not use var, that makes a new local variable instead of using the current global one 
@@ -193,6 +211,32 @@ function connectVariablesToGLSL() {
   u_CameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
   if (!u_CameraPos) {
     console.log('Failed to get the storage location of u_cameraPos');
+    return;
+  }
+
+  u_spotPos = gl.getUniformLocation(gl.program, 'u_spotPos');
+  if (!u_spotPos) {
+    console.log('Failed to get the storage location of u_spotPos');
+    return;
+  }
+  u_spotDir = gl.getUniformLocation(gl.program, 'u_spotDir');
+  if (!u_spotDir) {
+    console.log('Failed to get the storage location of u_spotDir');
+    return;
+  }
+  u_spotCosineCutoff = gl.getUniformLocation(gl.program, 'u_spotCosineCutoff');
+  if (!u_spotCosineCutoff) {
+    console.log('Failed to get the storage location of u_spotCosineCutoff');
+    return;
+  }
+  u_spotExponent = gl.getUniformLocation(gl.program, 'u_spotExponent');
+  if (!u_spotExponent) {
+    console.log('Failed to get the storage location of u_spotExponent');
+    return;
+  }
+  u_spotOn = gl.getUniformLocation(gl.program, 'u_spotOn');
+  if (!u_spotOn) {
+    console.log('Failed to get the storage location of u_spotOn');
     return;
   }
 
@@ -277,6 +321,9 @@ function addActionsForHtmlUI(){
 
   document.getElementById('walkOn').onclick = function(){ g_walkingAnimation = true; };
   document.getElementById('walkOff').onclick = function(){ g_walkingAnimation = false; };
+
+  document.getElementById('spotOn').onclick = function(){ g_spotOn = true; renderAllShapes(); };
+  document.getElementById('spotOff').onclick = function(){ g_spotOn = false; renderAllShapes(); };
 }
 
 var g_startTime = performance.now()/1000;
@@ -538,6 +585,11 @@ function renderAllShapes(){
   gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
   gl.uniform3f(u_CameraPos, g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2]);
   gl.uniform1i(u_lightOn, g_lightOn);
+  gl.uniform3f(u_spotPos, g_spotPos[0], g_spotPos[1], g_spotPos[2]);
+  gl.uniform3f(u_spotDir, g_spotDir[0], g_spotDir[1], g_spotDir[2]);
+  gl.uniform1f(u_spotCosineCutoff, g_spotCosineCutoff);
+  gl.uniform1f(u_spotExponent, g_spotExponent);
+  gl.uniform1i(u_spotOn, g_spotOn);
   drawMap();
   drawChihuahua();
 
