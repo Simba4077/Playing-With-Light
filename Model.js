@@ -61,6 +61,12 @@ class Model {
     }
 render() {
     if (!this.isFullyLoaded) return;
+    
+    if (g_normalOn) {
+        this.textureNum = -3;
+    } else {
+        this.textureNum = -2; 
+    }
 
 
     gl.uniform1i(u_whichTexture, this.textureNum);
