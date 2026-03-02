@@ -257,6 +257,7 @@ let g_normalOn = false;
 let g_lightPos =[0,1,-2];
 let g_animationOn = false;
 let g_lightOn = true;
+var g_teapot;
 
 
 
@@ -370,6 +371,8 @@ function main() {
   canvas.onmousedown = handleMouseDown;
   canvas.onmousemove = handleMouseMove;
   canvas.onmouseup = handleMouseUp;
+
+  g_teapot = new Model('teapot.obj');
 
   initTextures();
  
@@ -606,6 +609,10 @@ function renderAllShapes(){
   head.renderfast();
 
   //----------------------------------------
+  g_teapot.matrix.setIdentity();
+  g_teapot.matrix.translate(0, 0, 0);  // position it wherever you want
+  g_teapot.normalMatrix.setInverseOf(g_teapot.matrix).transpose();
+  g_teapot.render();
 
 
   var duration = performance.now() - startTime;
