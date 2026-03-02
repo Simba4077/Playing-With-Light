@@ -552,18 +552,18 @@ function renderAllShapes(){
   var sky = new Cube();
   sky.useSpecular = 0;
   sky.color = [1.0, 0.5, 0.5, 1.0];
-  sky.textureNum = -2;
+  sky.textureNum = 0;
   if(g_normalOn) sky.textureNum = -3;
-  sky.matrix.scale(-32,-32,-32);
+  sky.matrix.scale(-20,-20,-20);
   sky.matrix.translate(-0.5, -0.5, -0.5);
   sky.renderfast();
 
   var floor = new Cube();
-  floor.color = [0.5, 0.5, 0.5, 1.0];
-  floor.textureNum = -1;
+  floor.color = [0.2, 0.9, 0.1, 1.0];
+  floor.textureNum = -2;
   floor.matrix.translate(0, -.75, -0.0);
   floor.matrix.scale(31, 0.01, 31);
-  floor.matrix.translate(-.5, 1, -.5);
+  floor.matrix.translate(-.5, -9, -.5);
   floor.renderfast();
 
   var whiteSphere = new Sphere();
@@ -610,8 +610,11 @@ function renderAllShapes(){
 
   //----------------------------------------
   g_teapot.matrix.setIdentity();
-  g_teapot.matrix.translate(0, 0, 0);  // position it wherever you want
+  g_teapot.matrix.translate(3, -1, -4); 
   g_teapot.normalMatrix.setInverseOf(g_teapot.matrix).transpose();
+  g_teapot.useSpecular = 1;
+  if(g_normalOn) g_teapot.textureNum = -3;
+  g_teapot.matrix.scale(0.4,0.4,0.4);
   g_teapot.render();
 
 
@@ -652,9 +655,9 @@ function initTextures() {
     return false;
   }
   image1.onload = function(){ sendImageToTEXTURE1(image1); };
-  image1.onerror = function() { console.log('Failed to load uvgrid.png'); };  // Add this
+  image1.onerror = function() { console.log('Failed to load gray.jpg'); };  // Add this
 
-  image1.src = 'uvgrid.png';
+  image1.src = 'gray.jpg';
 
   return true;
 }

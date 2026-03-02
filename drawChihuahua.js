@@ -31,7 +31,7 @@ function drawChihuahua() {
   var frontBody = new Cube();
   frontBody.color = [0.898, 0.827, 0.702, 1.0];
   frontBody.matrix.rotate(front_body_angle, 0, 1, 0);
-  frontBody.matrix.translate(-4.9, -0.1, 0.0);
+  frontBody.matrix.translate(1.4, -.4, 0.0);
   var frontBodyFrame = new Matrix4(frontBody.matrix);
   frontBody.matrix.scale(0.18, 0.18, 0.28);
   frontBody.renderfast();
