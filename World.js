@@ -26,6 +26,7 @@ var FSHADER_SOURCE = `
   varying vec2 v_UV;
   varying vec3 v_Normal;
   uniform vec3 u_spotPos;
+  uniform vec3 u_lightColor;
   uniform vec3 u_spotDir;
   uniform float u_spotCosineCutoff;
   uniform float u_spotExponent;
@@ -68,7 +69,7 @@ var FSHADER_SOURCE = `
       vec3 E = normalize(u_cameraPos - vec3(v_VertPos));
       float specular = 0.8 * pow(max(dot(E, R), 0.0), 30.0);
 
-      vec3 diffuse = vec3(gl_FragColor) * nDotL;
+      vec3 diffuse = vec3(gl_FragColor) * nDotL * u_lightColor;
       vec3 ambient = vec3(gl_FragColor) * 0.1;
 
       vec3 finalColor;
@@ -106,6 +107,7 @@ let gl;
 let a_Position
 let u_FragColor;
 let a_UV;
+let u_lightColor;
 let a_Normal;
 let u_whichTexture;
 let u_Size;
@@ -162,6 +164,12 @@ function connectVariablesToGLSL() {
   a_UV = gl.getAttribLocation(gl.program, 'a_UV');
   if (a_UV < 0){
     console.log('Failed to get the storage location of a_UV');
+    return;
+  }
+
+  u_lightColor = gl.getUniformLocation(gl.program, 'u_lightColor');
+  if (!u_lightColor) {
+    console.log('Failed to get the storage location of u_lightColor');
     return;
   }
 
@@ -292,6 +300,7 @@ let g_selectedType = POINT;
 let g_globalAngle = 0;
 let g_camera;
 let g_topAngle = 0;
+let g_lightColor = [1.0, 1.0, 1.0]; // white by default
 let g_middleAngle = 0;
 let g_isDragging = false;
 let g_lastMouseX = 0;
@@ -324,6 +333,19 @@ function addActionsForHtmlUI(){
 
   document.getElementById('spotOn').onclick = function(){ g_spotOn = true; renderAllShapes(); };
   document.getElementById('spotOff').onclick = function(){ g_spotOn = false; renderAllShapes(); };
+
+  document.getElementById('lightColorR').addEventListener('mousemove', function() {
+      g_lightColor[0] = this.value / 255;
+      renderAllShapes();
+  });
+  document.getElementById('lightColorG').addEventListener('mousemove', function() {
+      g_lightColor[1] = this.value / 255;
+      renderAllShapes();
+  });
+  document.getElementById('lightColorB').addEventListener('mousemove', function() {
+      g_lightColor[2] = this.value / 255;
+      renderAllShapes();
+});
 }
 
 var g_startTime = performance.now()/1000;
@@ -418,7 +440,12 @@ function main() {
   canvas.onmousedown = handleMouseDown;
   canvas.onmousemove = handleMouseMove;
   canvas.onmouseup = handleMouseUp;
-
+  canvas.onclick = function(ev) {
+      if(ev.shiftKey) {
+          poke_animation = true;
+          pokeStartTime = g_seconds;  // capture when the poke started
+      }
+  };
   g_teapot = new Model('teapot.obj');
 
   initTextures();
@@ -535,6 +562,7 @@ function renderAllShapes(){
   gl.uniform1i(u_lightOn, g_lightOn);
   gl.uniform3f(u_spotPos, g_spotPos[0], g_spotPos[1], g_spotPos[2]);
   gl.uniform3f(u_spotDir, g_spotDir[0], g_spotDir[1], g_spotDir[2]);
+  gl.uniform3f(u_lightColor, g_lightColor[0], g_lightColor[1], g_lightColor[2]);
   gl.uniform1f(u_spotCosineCutoff, g_spotCosineCutoff);
   gl.uniform1f(u_spotExponent, g_spotExponent);
   gl.uniform1i(u_spotOn, g_spotOn);
